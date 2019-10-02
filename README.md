@@ -1,7 +1,7 @@
 # CSC 413 - Project Two - The Interpreter
 
-## Student Name  : Name here
+## Student Name  : Malkam Golden
 
-## Student ID    : ID here
+## Student ID    : 916379807  
 
-## Student Email : Email here
+## Student Email : mgoldenn@mail.sfsu.edu
