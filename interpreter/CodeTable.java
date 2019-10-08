@@ -4,6 +4,12 @@
  * @value name of the class that the key belongs to.
  * returns Class name as a string.
  */
+/**
+ * Code table of byte codes in language X
+ * @key name of a specific byte code
+ * @value name of the class that the key belongs to.
+ * returns Class name as a string.
+ */
 package interpreter;
 
 import java.util.HashMap;
@@ -45,3 +51,4 @@ public class CodeTable {
         
     }
 }
+
