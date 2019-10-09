@@ -10,7 +10,7 @@ public class RunTimeStack {
     private Stack<Integer> framePointer;
 
     /**
-     * Contructor
+     * Constructor
      */
     public RunTimeStack() {
 
