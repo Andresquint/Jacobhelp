@@ -1,8 +1,4 @@
 package interpreter;
-
-import interpreter.bytecode.ByteCode;
-import interpreter.bytecode.DumpCode;
-
 import java.util.ArrayList;
 import java.util.Stack;
 
@@ -14,217 +10,200 @@ public class RunTimeStack {
     private Stack<Integer> framePointer;
 
     /**
-     * Constructor
+     * Contructor
      */
-    public class VirtualMachine {
+    public RunTimeStack() {
 
-        private RunTimeStack runStack;
-        private Stack returnAddrs;
-        private Program program;
-        private int pc;
-        private boolean isRunning;
-        private boolean dump;
+        runTimeStack = new ArrayList<>();
+        framePointer = new Stack<>();
+        // main is the entry point of our language, so its frame pointer is 0.
+        framePointer.add(0);
+    }
 
-        /**
-         * Constructs the VirtualMachine
-         *
-         * @param program
-         */
-        protected VirtualMachine(Program program) {
+    /**
+     * Prints out all the information about the runTimeStack formatted to see
+     * the frames.
+     */
+    public void dump() {
 
-            this.program = program;
-            dump = false;
-        }
+        int currFrame = 0;
 
-        /**
-         * Executes program by incrementing the PC and executing the code on the
-         * line, lso handles dumping if necessary
-         */
-        public void executeProgram() {
+        while (currFrame != framePointer.size()) {
 
-            pc = 0;
-            runStack = new RunTimeStack();
-            returnAddrs = new Stack();
-            isRunning = true;
+            //if there is a next frame
+            if (currFrame < framePointer.size() - 1) {
 
-            while (isRunning) {
+                //if the frame is empty
+                if (currFrame == framePointer.get(currFrame + 1)) {
 
-                ByteCode code = program.getCode(pc);
-                ((ByteCode) code).execute(this);
-                if (dump && !(code instanceof DumpCode)) {
+                    System.out.print("[] ");
 
-                    runStack.dump();
+                    //if frame contains elements
+                } else {
+
+                    System.out.print("[");
+
+                    //prints out values in the stack
+                    for (int i = framePointer.get(currFrame); i < framePointer.get(currFrame + 1); i++) {
+
+                        System.out.print(runTimeStack.get(i));
+
+                        if (i < framePointer.get(currFrame + 1) - 1) {
+
+                            System.out.print(",");
+                        }
+                    }
+
+                    System.out.print("] ");
+
                 }
 
-                pc++;
+                //if there is not a next frame
+            } else {
+
+                System.out.print("[");
+
+                //print elements in stack
+                for (int i = framePointer.get(currFrame); i < runTimeStack.size(); i++) {
+                    System.out.print(runTimeStack.get(i));
+                    if (i < runTimeStack.size() - 1) {
+                        System.out.print(",");
+                    }
+                }
+
+                System.out.print("] ");
+
             }
+            currFrame++;
+        }
+        System.out.println();
 
+    }
+
+    /**
+     * Gets the top value in the runTimeStack
+     *
+     * @return top value in RTS
+     */
+    public int peek() {
+
+        return (int) runTimeStack.get(runTimeStack.size() - 1);
+    }
+
+    /**
+     * Pops top value of runTimeStack
+     *
+     * @return popped value
+     */
+    public int pop() {
+
+        return (int) runTimeStack.remove(runTimeStack.size() - 1);
+    }
+
+    /**
+     * Adds a value to the top of the runTimeStack
+     *
+     * @param i pushed value
+     * @return pushed value
+     */
+    public int push(int i) {
+
+        runTimeStack.add(i);
+        return i;
+    }
+
+    /**
+     * Creates a new frame with an offset from the top of the stack
+     *
+     * @param offset
+     */
+    public void newFrameAt(int offset) {
+
+        framePointer.add(runTimeStack.size() - offset);
+    }
+
+    /**
+     * Holds onto top value, pops the rest and and the frame, pushes the held
+     * value back on top
+     */
+    public void popFrame() {
+
+        int popped = (int) runTimeStack.remove(runTimeStack.size() - 1);
+        int frame = framePointer.pop();
+        for (int i = runTimeStack.size() - 1; i >= frame; i--) {
+
+            runTimeStack.remove(runTimeStack.size() - 1);
         }
 
-        /**
-         * Used by DUMP to turn dump on
-         */
-        public void dumpOn() {
+        runTimeStack.add(popped);
+    }
 
-            dump = true;
+    /**
+     * Sets a variable to the value on top of the stack
+     *
+     * @param offset
+     * @return stored value
+     */
+    public int store(int offset) {
+
+        int storing = (int) runTimeStack.remove(runTimeStack.size() - 1);
+        runTimeStack.set(offset + framePointer.peek(), storing);
+        return storing;
+
+    }
+
+    /**
+     * Loads a value from the stack and places it on the top
+     *
+     * @param offset
+     * @return loaded value
+     */
+    public int load(int offset) {
+
+        int loading = (int) runTimeStack.get(offset + framePointer.peek());
+        runTimeStack.add(loading);
+        return loading;
+    }
+
+    /**
+     * Pushes an Integer object into the stack
+     *
+     * @param i
+     * @return pushed value
+     */
+    public Integer push(Integer i) {
+
+        runTimeStack.add(i);
+        return i;
+    }
+
+    /**
+     * Gets size of the stack
+     *
+     * @return
+     */
+    public int size() {
+
+        return runTimeStack.size();
+    }
+
+    /**
+     * Gets elements in the top frame
+     *
+     * @return
+     */
+    public String args() {
+
+        String args = "";
+        for (int i = runTimeStack.size() - 1; i >= framePointer.peek(); i--) {
+
+            args = args + runTimeStack.get(i);
+            if (i != framePointer.peek()) {
+
+                args = args + ",";
+            }
         }
-
-        /**
-         * Used by DUMP to turn dump off
-         */
-        public void dumpOff() {
-
-            dump = false;
-        }
-
-        /**
-         * Used by bytecodes for dump's state
-         *
-         * @return if dump is true of false
-         */
-        public boolean dumpState() {
-
-            return dump;
-        }
-
-        /**
-         * Used by HALT to stop the VM
-         */
-        public void stopVM() {
-
-            isRunning = false;
-        }
-
-        /**
-         * Used by BOP & POP & FALSEBRANCH & STORE to pop the top of the runStack
-         *
-         * @return popped value
-         */
-        public int popStack() {
-
-            return runStack.pop();
-
-        }
-
-        /**
-         * Used by FALSEBRANCH & GOTO & CALL & RETURN to change the program counter
-         *
-         * @param line
-         */
-        public void setPC(int line) {
-
-            pc = line;
-        }
-
-        /**
-         * Used by STORE to set variable
-         *
-         * @param offset element to be changed, starting from beginning of frame
-         * @return
-         */
-        public int setVar(int offset) {
-
-            return runStack.store(offset);
-        }
-
-        /**
-         * Used by LOAD to load a variable to the top of the stack
-         *
-         * @param offset
-         */
-        public void loadVar(int offset) {
-
-            runStack.load(offset);
-        }
-
-        /**
-         * Used by BOP & LIT & READ to push given value to top of stack
-         *
-         * @param value
-         */
-        public void pushStack(int value) {
-
-            runStack.push(value);
-        }
-
-        /**
-         * Used by ARGS to create new frame with the offset from the top of the
-         * stack
-         *
-         * @param offset
-         */
-        public void pushFrame(int offset) {
-
-            runStack.newFrameAt(offset);
-        }
-
-        /**
-         * Used by CALL to push a return value for PC into returnAddrs
-         *
-         * @param address
-         */
-        public void pushRetAdd(int address) {
-
-            returnAddrs.push(address);
-        }
-
-        /**
-         * Used by CALL to get the current value of PC
-         *
-         * @return current value of PC
-         */
-        public int getPC() {
-
-            return pc;
-        }
-
-        /**
-         * Used by RETURN to pop a frame out of the frameStack
-         */
-        public void popFrame() {
-
-            runStack.popFrame();
-        }
-
-        /**
-         * Used by RETURN to get the next return address
-         *
-         * @return the top value of returnAddrs
-         */
-        public int popRetAdd() {
-
-            return (int) returnAddrs.pop();
-        }
-
-        /**
-         * Used by RETURN & WRITE to get the top value of the stack
-         *
-         * @return top value on the stack
-         */
-        public int peekStack() {
-
-            return runStack.peek();
-        }
-
-        /**
-         * Used by POP to get the size of the runStack
-         *
-         * @return size of the runStack
-         */
-        public int stackSize() {
-
-            return runStack.size();
-        }
-
-        /**
-         * Used by CALL to get parameters for a function
-         *
-         * @return string of parameter
-         */
-        public String getArgs() {
-
-            return runStack.args();
-        }
+        return args;
     }
 
 }
